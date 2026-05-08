@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🌌 Base Theme */
+:root {
+  --bg-primary: #020617;
+  --bg-secondary: #050c1a;
+
+  --text-primary: #f1f5f9;
+  --text-muted: #94a3b8;
+
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-hover: rgba(255, 255, 255, 0.1);
+
+  --accent: #3b82f6;
+}
+
+/* 🌍 Global reset */
+* {
+  box-sizing: border-box;
+}
+
+/* 🌌 Background */
+body {
+  background: radial-gradient(circle at top, #0b1730, #020617);
+  color: var(--text-primary);
+  font-family: system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 🧊 Glass Base */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+/* 🧊 Strong Glass (cards, modals) */
+.glass-strong {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+}
+
+/* ✨ Hover Effects */
+.glass-hover:hover {
+  background: var(--glass-hover);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* 🔵 Glow Effect */
+.glow {
+  box-shadow:
+    0 0 30px rgba(59, 130, 246, 0.15),
+    0 0 80px rgba(59, 130, 246, 0.05);
+}
+
+/* 🎨 Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #60a5fa, #22d3ee, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 📦 File Card */
+.file-card {
+  transition: all 0.2s ease;
+}
+
+.file-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 📊 Table row hover */
+.table-row-hover:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* 🧭 Sidebar active */
+.nav-active {
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.15),
+    rgba(59, 130, 246, 0.05)
+  );
+  border-left: 2px solid var(--accent);
+  color: #60a5fa;
+}
+
+/* 🎯 Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  padding: 10px 18px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+/* 🧾 Inputs */
+.input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  color: white;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+}
+
+/* 🎬 Animations */
+.animate-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.6s ease forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ⏱ Animation delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+
+/* 🧵 Scrollbar (clean) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
