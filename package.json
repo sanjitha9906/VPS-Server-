@@ -10,14 +10,26 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase": "^12.14.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.378.0",
     "mongoose": "^9.6.2",
     "next": "14.0.0",
+    "node-pty": "^1.1.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "ssh2": "^1.17.0",
+    "systeminformation": "^5.31.7",
+    "xterm": "^5.3.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "25.6.0",

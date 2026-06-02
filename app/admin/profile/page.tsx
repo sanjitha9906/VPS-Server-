@@ -1,434 +1,249 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
-  User,
-  Mail,
-  Lock,
-  Shield,
-  Camera,
-  Bell,
-  Globe,
-  Server,
-} from "lucide-react";
+  EmailAuthProvider,
+  onAuthStateChanged,
+  reauthenticateWithCredential,
+  updatePassword,
+} from "firebase/auth";
+
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+
+import { auth, db } from "@/lib/firebase";
 
 export default function ProfilePage() {
+  const [uid, setUid] = useState("");
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("User");
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
+
+  const [popup, setPopup] = useState("");
+
+  const showPopup = (message: string) => {
+    setPopup(message);
+
+    setTimeout(() => {
+      setPopup("");
+    }, 2500);
+  };
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+
+      setUid(user.uid);
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+
+      if (snap.exists()) {
+        const data = snap.data();
+
+        setName(data.name || "");
+        setEmail(data.email || "");
+        setRole(data.role || "user");
+      }
+    });
+
+    return () => unsub();
+  }, []);
+
+  const saveProfile = async () => {
+    try {
+      setLoadingProfile(true);
+
+      await updateDoc(doc(db, "users", uid), {
+        name,
+      });
+
+      showPopup("Profile updated successfully!");
+    } catch (error) {
+      console.log(error);
+
+      showPopup("Failed to update profile");
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const changePassword = async () => {
+    try {
+      if (!auth.currentUser) return;
+
+      setLoadingPassword(true);
+
+      const credential = EmailAuthProvider.credential(
+        auth.currentUser.email || "",
+        currentPassword,
+      );
+
+      await reauthenticateWithCredential(auth.currentUser, credential);
+
+      await updatePassword(auth.currentUser, newPassword);
+
+      setCurrentPassword("");
+      setNewPassword("");
+
+      showPopup("Password updated successfully!");
+    } catch (error: any) {
+      console.log(error);
+
+      if (error.code === "auth/wrong-password") {
+        showPopup("Current password is incorrect");
+      } else if (error.code === "auth/weak-password") {
+        showPopup("New password must be at least 6 characters");
+      } else {
+        showPopup("Failed to update password");
+      }
+    } finally {
+      setLoadingPassword(false);
+    }
+  };
 
   return (
+    <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white p-8">
+      {/* POPUP */}
+      {popup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-[#071120] border border-cyan-400/30 rounded-3xl px-10 py-8 shadow-[0_0_60px_rgba(34,211,238,0.25)] text-center">
+            <h2 className="text-2xl font-bold text-cyan-300 mb-3">
+              Notification
+            </h2>
 
-    <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white p-10">
+            <p className="text-white text-lg">{popup}</p>
+          </div>
+        </div>
+      )}
 
-      {/* ========================================================= */}
-      {/* BACKGROUND */}
-      {/* ========================================================= */}
-
-      {/* Main Background */}
+      {/* BG */}
       <div className="absolute inset-0 bg-[#020617]" />
 
-      {/* Grid */}
       <div
         className="absolute inset-0 opacity-[0.05]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
+            "linear-gradient(to right, rgba(0,255,255,0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,255,255,0.12) 1px, transparent 1px)",
+          backgroundSize: "55px 55px",
         }}
       />
 
-      {/* Glow Effects */}
-      <div className="absolute top-[-200px] left-[-100px] w-[600px] h-[600px] bg-cyan-500/10 blur-[180px] rounded-full" />
+      <div className="absolute top-[-200px] left-[-100px] w-[500px] h-[500px] bg-cyan-500/10 blur-[140px] rounded-full" />
 
-      <div className="absolute bottom-[-250px] right-[-100px] w-[700px] h-[700px] bg-purple-500/10 blur-[180px] rounded-full" />
-
-      {/* Floating Icons */}
-      {[...Array(12)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute animate-floatIcon opacity-10"
-          style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            animationDuration: `${10 + Math.random() * 10}s`,
-            animationDelay: `${Math.random() * 5}s`,
-          }}
-        >
-          <User
-            size={35 + Math.random() * 35}
-            color="rgba(255,255,255,0.25)"
-          />
-        </div>
-      ))}
-
-      {/* Data Lines */}
-      <div className="absolute inset-0 overflow-hidden">
-
-        <div className="absolute top-[20%] left-[-20%] w-[140%] h-[2px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent animate-lineMove" />
-
-        <div className="absolute top-[50%] right-[-20%] w-[140%] h-[2px] bg-gradient-to-r from-transparent via-purple-500/40 to-transparent animate-lineMove2" />
-
-        <div className="absolute top-[75%] left-[-20%] w-[140%] h-[2px] bg-gradient-to-r from-transparent via-blue-500/40 to-transparent animate-lineMove" />
-
-      </div>
-
-      {/* ========================================================= */}
-      {/* CONTENT */}
-      {/* ========================================================= */}
+      <div className="absolute bottom-[-200px] right-[-100px] w-[500px] h-[500px] bg-blue-500/10 blur-[140px] rounded-full" />
 
       <div className="relative z-10">
-
-        {/* Header */}
+        {/* HEADER */}
         <div className="mb-10">
-
-          <h1 className="text-5xl font-black bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-6xl font-black bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
             USER PROFILE
           </h1>
 
-          <p className="text-slate-400 mt-3 text-lg">
+          <p className="text-slate-400 text-xl mt-4">
             Manage your account information and security.
           </p>
-
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-          {/* ========================================================= */}
-          {/* PROFILE CARD */}
-          {/* ========================================================= */}
-
-          <div className="bg-[#071120]/70 border border-white/10 rounded-[32px] p-8 backdrop-blur-2xl hover:border-cyan-400/30 transition-all duration-500">
-
-            {/* Profile Header */}
-            <div className="flex items-center gap-6 mb-10">
-
-              <div className="relative">
-
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500 p-[3px] animate-avatarGlow">
-
-                  <div className="w-full h-full rounded-full bg-[#020617] flex items-center justify-center text-4xl font-bold">
-                    A
-                  </div>
-
-                </div>
-
-                <button className="absolute bottom-0 right-0 bg-cyan-500 p-2 rounded-full hover:scale-110 transition-all">
-
-                  <Camera size={16} />
-
-                </button>
-
+          {/* PROFILE */}
+          <div className="bg-[#071120]/70 border border-white/10 backdrop-blur-2xl rounded-3xl p-8">
+            <div className="flex items-center gap-5 mb-8">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-4xl font-bold">
+                {name?.charAt(0)}
               </div>
 
               <div>
+                <h2 className="text-4xl font-bold">{name}</h2>
 
-                <h2 className="text-3xl font-bold">
-                  Admin
-                </h2>
+                <p className="text-slate-400 mt-1">{email}</p>
 
-                <p className="text-slate-400 mt-2">
-                  admin@gmail.com
-                </p>
-
-                <div className="flex items-center gap-2 mt-3 text-cyan-300 text-sm">
-
-                  <Shield size={16} />
-
-                  Super Administrator
-
-                </div>
-
+                <p className="text-cyan-300 mt-2 capitalize">{role}</p>
               </div>
-
             </div>
 
-            {/* Form */}
             <div className="space-y-6">
-
               <div>
-
-                <label className="flex items-center gap-2 text-slate-300 mb-3">
-
-                  <User size={18} />
-
-                  Full Name
-
-                </label>
+                <label className="block text-slate-300 mb-3">Full Name</label>
 
                 <input
                   type="text"
-                  defaultValue="Admin"
-                  className="w-full bg-black/30 border border-slate-700 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-all"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-black/30 border border-slate-700 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400"
                 />
-
               </div>
 
               <div>
-
-                <label className="flex items-center gap-2 text-slate-300 mb-3">
-
-                  <Mail size={18} />
-
+                <label className="block text-slate-300 mb-3">
                   Email Address
-
                 </label>
 
                 <input
                   type="email"
-                  defaultValue="admin@gmail.com"
-                  className="w-full bg-black/30 border border-slate-700 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-all"
+                  value={email}
+                  disabled
+                  className="w-full bg-black/20 border border-slate-800 rounded-2xl px-5 py-4 text-slate-400 cursor-not-allowed"
                 />
-
               </div>
 
-              <button className="w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:scale-[1.02] transition-all duration-300 py-4 rounded-2xl text-lg font-bold shadow-[0_0_30px_rgba(34,211,238,0.35)]">
-
-                Save Changes
-
+              <button
+                onClick={saveProfile}
+                disabled={loadingProfile}
+                className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 py-4 rounded-2xl text-lg font-bold hover:scale-[1.02] transition disabled:opacity-60"
+              >
+                {loadingProfile ? "Saving..." : "Save Changes"}
               </button>
-
             </div>
-
           </div>
 
-          {/* ========================================================= */}
-          {/* SECURITY CARD */}
-          {/* ========================================================= */}
+          {/* SECURITY */}
+          <div className="bg-[#071120]/70 border border-white/10 backdrop-blur-2xl rounded-3xl p-8">
+            <h2 className="text-4xl font-bold mb-8">Security Settings</h2>
 
-          <div className="space-y-8">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-slate-300 mb-3">
+                  Current Password
+                </label>
 
-            {/* Security */}
-            <div className="bg-[#071120]/70 border border-white/10 rounded-[32px] p-8 backdrop-blur-2xl hover:border-purple-400/30 transition-all duration-500">
-
-              <h2 className="text-3xl font-bold mb-8">
-                Security Settings
-              </h2>
-
-              <div className="space-y-6">
-
-                <div>
-
-                  <label className="flex items-center gap-2 text-slate-300 mb-3">
-
-                    <Lock size={18} />
-
-                    Current Password
-
-                  </label>
-
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full bg-black/30 border border-slate-700 rounded-2xl px-5 py-4 outline-none focus:border-purple-400 focus:shadow-[0_0_20px_rgba(168,85,247,0.25)] transition-all"
-                  />
-
-                </div>
-
-                <div>
-
-                  <label className="flex items-center gap-2 text-slate-300 mb-3">
-
-                    <Lock size={18} />
-
-                    New Password
-
-                  </label>
-
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full bg-black/30 border border-slate-700 rounded-2xl px-5 py-4 outline-none focus:border-purple-400 focus:shadow-[0_0_20px_rgba(168,85,247,0.25)] transition-all"
-                  />
-
-                </div>
-
-                <button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:scale-[1.02] transition-all duration-300 py-4 rounded-2xl text-lg font-bold shadow-[0_0_30px_rgba(34,197,94,0.35)]">
-
-                  Update Password
-
-                </button>
-
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full bg-black/30 border border-slate-700 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400"
+                />
               </div>
 
-            </div>
+              <div>
+                <label className="block text-slate-300 mb-3">
+                  New Password
+                </label>
 
-            {/* Quick Settings */}
-            <div className="bg-[#071120]/70 border border-white/10 rounded-[32px] p-8 backdrop-blur-2xl">
-
-              <h2 className="text-3xl font-bold mb-8">
-                Quick Settings
-              </h2>
-
-              <div className="space-y-5">
-
-                <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl p-5">
-
-                  <div className="flex items-center gap-4">
-
-                    <Bell className="text-yellow-400" />
-
-                    <div>
-
-                      <h3 className="font-semibold">
-                        Notifications
-                      </h3>
-
-                      <p className="text-slate-400 text-sm">
-                        Server alerts & updates
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <button className="px-4 py-2 rounded-xl bg-yellow-500/15 border border-yellow-400/20 hover:bg-yellow-500/25 transition-all">
-
-                    Enabled
-
-                  </button>
-
-                </div>
-
-                <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl p-5">
-
-                  <div className="flex items-center gap-4">
-
-                    <Globe className="text-cyan-400" />
-
-                    <div>
-
-                      <h3 className="font-semibold">
-                        Region
-                      </h3>
-
-                      <p className="text-slate-400 text-sm">
-                        Asia - India
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <button className="px-4 py-2 rounded-xl bg-cyan-500/15 border border-cyan-400/20 hover:bg-cyan-500/25 transition-all">
-
-                    Active
-
-                  </button>
-
-                </div>
-
-                <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl p-5">
-
-                  <div className="flex items-center gap-4">
-
-                    <Server className="text-purple-400" />
-
-                    <div>
-
-                      <h3 className="font-semibold">
-                        VPS Status
-                      </h3>
-
-                      <p className="text-slate-400 text-sm">
-                        All servers running
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <button className="px-4 py-2 rounded-xl bg-purple-500/15 border border-purple-400/20 hover:bg-purple-500/25 transition-all">
-
-                    Online
-
-                  </button>
-
-                </div>
-
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-black/30 border border-slate-700 rounded-2xl px-5 py-4 outline-none focus:border-cyan-400"
+                />
               </div>
 
+              <button
+                onClick={changePassword}
+                disabled={loadingPassword}
+                className="w-full bg-green-500 hover:bg-green-400 py-4 rounded-2xl text-lg font-bold transition disabled:opacity-60"
+              >
+                {loadingPassword ? "Updating..." : "Update Password"}
+              </button>
             </div>
-
           </div>
-
         </div>
-
       </div>
-
-      {/* ========================================================= */}
-      {/* ANIMATIONS */}
-      {/* ========================================================= */}
-
-      <style jsx>{`
-
-        .animate-floatIcon {
-          animation: floatIcon linear infinite;
-        }
-
-        .animate-lineMove {
-          animation: lineMove 10s linear infinite;
-        }
-
-        .animate-lineMove2 {
-          animation: lineMove2 12s linear infinite;
-        }
-
-        .animate-avatarGlow {
-          animation: avatarGlow 4s ease-in-out infinite;
-        }
-
-        @keyframes floatIcon {
-
-          0% {
-            transform: translateY(0px) rotate(0deg);
-          }
-
-          50% {
-            transform: translateY(-25px) rotate(8deg);
-          }
-
-          100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-
-        }
-
-        @keyframes lineMove {
-
-          0% {
-            transform: translateX(-20%);
-          }
-
-          100% {
-            transform: translateX(20%);
-          }
-
-        }
-
-        @keyframes lineMove2 {
-
-          0% {
-            transform: translateX(20%);
-          }
-
-          100% {
-            transform: translateX(-20%);
-          }
-
-        }
-
-        @keyframes avatarGlow {
-
-          0%,100% {
-            box-shadow: 0 0 30px rgba(34,211,238,0.35);
-          }
-
-          50% {
-            box-shadow: 0 0 60px rgba(168,85,247,0.45);
-          }
-
-        }
-
-      `}</style>
-
     </main>
-
   );
 }
