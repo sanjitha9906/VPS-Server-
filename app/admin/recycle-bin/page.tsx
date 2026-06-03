@@ -36,7 +36,7 @@ type ModalAction =
   | { kind: "delete"; name: string }
   | { kind: "empty" };
 
-const API = "/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.sahalabs.in";
 
 function getIcon(name: string, type: string) {
   if (type === "folder") return <Folder size={34} />;
@@ -235,7 +235,7 @@ export default function RecycleBinPage() {
     try {
       if (!silent) setLoading(true);
 
-      const res = await fetch(`${API}/recycle-bin`, {
+      const res = await fetch(`${API}/recycle-bin?t=${Date.now()}`, {
         cache: "no-store",
       });
 
