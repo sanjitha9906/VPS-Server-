@@ -22,7 +22,7 @@ interface RecycleItem {
   deletedAt: string;
   daysRemaining?: number;
   type: "file" | "folder";
-  originalLocation?: string;
+  originalLocation: string;
 }
 
 interface Toast {
@@ -36,7 +36,7 @@ type ModalAction =
   | { kind: "delete"; name: string }
   | { kind: "empty" };
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API = "/api";
 
 function getIcon(name: string, type: string) {
   if (type === "folder") return <Folder size={34} />;
@@ -79,17 +79,19 @@ function formatDate(iso: string): string {
   }
 }
 
+interface ConfirmModalProps {
+  action: ModalAction;
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
 function ConfirmModal({
   action,
   onConfirm,
   onCancel,
   loading,
-}: {
-  action: ModalAction;
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading: boolean;
-}) {
+}: ConfirmModalProps) {
   const isDelete = action.kind === "delete" || action.kind === "empty";
   const isRestore = action.kind === "restore";
 
@@ -164,7 +166,9 @@ function ConfirmModal({
               style={{ color: accentColor }}
             >
               {action.kind === "restore"
-                ? `Destination: ${action.item.originalLocation || "Original location"}`
+                ? `Destination: ${
+                    action.item.originalLocation || "Original location"
+                  }`
                 : "This cannot be undone"}
             </span>
           </div>
@@ -238,7 +242,6 @@ export default function RecycleBinPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data: RecycleItem[] = await res.json();
-
       setItems(data);
       setError(null);
     } catch (err) {
@@ -265,6 +268,8 @@ export default function RecycleBinPage() {
     setModalLoading(true);
 
     try {
+      let res: Response;
+
       if (modal.kind === "restore") {
         const item = modal.item;
 
@@ -273,45 +278,45 @@ export default function RecycleBinPage() {
             ? `${API}/restore-folder/${encodeURIComponent(item.name)}`
             : `${API}/restore/${encodeURIComponent(item.name)}`;
 
-        const res = await fetch(endpoint, {
+        res = await fetch(endpoint, {
           method: "POST",
         });
 
-        const data = await res.json().catch(() => null);
-
         if (!res.ok) {
-          throw new Error(data?.error || "Restore failed");
+          const text = await res.text();
+          console.error("Restore error:", res.status, text);
+          throw new Error(text);
         }
 
         showToast(`"${item.name}" restored successfully.`, "success");
       }
 
       if (modal.kind === "delete") {
-        const res = await fetch(
+        res = await fetch(
           `${API}/permanent-delete/${encodeURIComponent(modal.name)}`,
           {
             method: "DELETE",
           },
         );
 
-        const data = await res.json().catch(() => null);
-
         if (!res.ok) {
-          throw new Error(data?.error || "Permanent delete failed");
+          const text = await res.text();
+          console.error("Delete error:", res.status, text);
+          throw new Error(text);
         }
 
         showToast(`"${modal.name}" permanently deleted.`, "success");
       }
 
       if (modal.kind === "empty") {
-        const res = await fetch(`${API}/empty-bin`, {
+        res = await fetch(`${API}/empty-bin`, {
           method: "DELETE",
         });
 
-        const data = await res.json().catch(() => null);
-
         if (!res.ok) {
-          throw new Error(data?.error || "Failed to empty bin");
+          const text = await res.text();
+          console.error("Empty bin error:", res.status, text);
+          throw new Error(text);
         }
 
         showToast("Recycle bin emptied.", "success");
@@ -588,7 +593,7 @@ export default function RecycleBinPage() {
           }
 
           100% {
-            transform: translateX(-160vw);
+            transform: translateX(-20%);
           }
         }
 
