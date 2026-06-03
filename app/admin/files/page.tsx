@@ -11,7 +11,6 @@ import {
   Search,
   Trash2,
   Download,
-  FolderPlus,
   HardDrive,
   X,
   Check,
@@ -49,25 +48,38 @@ interface DeleteTarget {
 
 function getIcon(name: string, type: string) {
   if (type === "folder") return <Folder size={34} />;
+
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
+
   if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext))
     return <Image size={34} />;
+
   if (["mp4", "mov", "avi", "mkv"].includes(ext)) return <Video size={34} />;
+
   if (["mp3", "wav", "flac", "ogg"].includes(ext)) return <Music size={34} />;
+
   if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
     return <Archive size={34} />;
+
   return <FileText size={34} />;
 }
 
 function getColor(name: string, type: string): string {
   if (type === "folder") return "#facc15";
+
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
+
   if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext))
     return "#a78bfa";
+
   if (["mp4", "mov", "avi", "mkv"].includes(ext)) return "#f87171";
+
   if (["mp3", "wav", "flac", "ogg"].includes(ext)) return "#34d399";
+
   if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return "#f59e0b";
+
   if (["txt", "log", "md"].includes(ext)) return "#22d3ee";
+
   return "#60a5fa";
 }
 
@@ -94,25 +106,23 @@ export default function FilesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [showNewFolder, setShowNewFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [folderMsg, setFolderMsg] = useState<string | null>(null);
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  // Custom delete confirmation popup state
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleting, setDeleting] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toastIdRef = useRef(0);
 
   const showToast = useCallback(
     (message: string, kind: "success" | "error") => {
       const id = ++toastIdRef.current;
+
       setToasts((prev) => [...prev, { id, message, kind }]);
-      setTimeout(
-        () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-        3500,
-      );
+
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 3500);
     },
     [],
   );
@@ -128,6 +138,7 @@ export default function FilesPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data: FileItem[] = await res.json();
+
       setFiles(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
@@ -195,6 +206,7 @@ export default function FilesPage() {
 
   const uploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     setUploading(true);
@@ -211,6 +223,7 @@ export default function FilesPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       showToast("File uploaded successfully!", "success");
+
       await fetchFiles(true);
       await fetchStorage();
     } catch (err) {
@@ -222,14 +235,13 @@ export default function FilesPage() {
     }
   };
 
-  // Step 1: show popup by setting deleteTarget
   const confirmDelete = (name: string, type: "file" | "folder") => {
     setDeleteTarget({ name, type });
   };
 
-  // Step 2: actually delete after user clicks OK in popup
   const executeDelete = async () => {
     if (!deleteTarget) return;
+
     const { name, type } = deleteTarget;
 
     setDeleting(true);
@@ -247,6 +259,7 @@ export default function FilesPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       showToast(`"${name}" moved to recycle bin.`, "success");
+
       await fetchFiles(true);
       await fetchStorage();
     } catch (err) {
@@ -260,51 +273,6 @@ export default function FilesPage() {
 
   const downloadFile = (name: string) => {
     window.open(`${API}/download/${encodeURIComponent(name)}`, "_blank");
-  };
-
-  const createFolder = async () => {
-    if (!newFolderName.trim()) return;
-
-    setFolderMsg(null);
-
-    try {
-      // Try POST /create-folder first, which is your existing endpoint
-      const res = await fetch(`${API}/create-folder`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: newFolderName.trim() }),
-      });
-
-      if (!res.ok) {
-        // Some backends use /folder or /folders — try fallback
-        const fallback = await fetch(`${API}/folder`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name: newFolderName.trim() }),
-        });
-
-        if (!fallback.ok) throw new Error(`HTTP ${fallback.status}`);
-      }
-
-      setFolderMsg("Folder created successfully!");
-      showToast("Folder created!", "success");
-      await fetchFiles(true);
-      await fetchStorage();
-
-      setTimeout(() => {
-        setShowNewFolder(false);
-        setNewFolderName("");
-        setFolderMsg(null);
-      }, 1500);
-    } catch (err) {
-      console.error("CREATE FOLDER ERROR:", err);
-      setFolderMsg("Failed to create folder. Check API endpoint.");
-      showToast("Failed to create folder.", "error");
-    }
   };
 
   return (
@@ -347,7 +315,6 @@ export default function FilesPage() {
       <div className="absolute top-[20%] right-[10%] w-72 h-72 border border-cyan-500/10 rounded-full animate-pingSlow" />
       <div className="absolute top-[20%] right-[10%] w-96 h-96 border border-blue-500/10 rounded-full animate-pingSlow2" />
 
-      {/* Toast notifications */}
       <div className="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
         {toasts.map((t) => (
           <div
@@ -370,6 +337,7 @@ export default function FilesPage() {
             <h1 className="text-5xl font-black bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
               FILE STORAGE
             </h1>
+
             <p className="text-slate-400 mt-3 text-lg">
               Manage your VPS files and folders
             </p>
@@ -391,18 +359,9 @@ export default function FilesPage() {
               <Upload size={22} />
               {uploading ? "Uploading…" : "Upload File"}
             </button>
-
-            <button
-              onClick={() => setShowNewFolder(true)}
-              className="flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-4 rounded-2xl font-bold hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(34,211,238,0.35)]"
-            >
-              <FolderPlus size={22} />
-              New Folder
-            </button>
           </div>
         </div>
 
-        {/* Storage Info Card */}
         {storageInfo && (
           <div className="bg-[#071120]/70 border border-white/10 rounded-[28px] p-7 backdrop-blur-2xl mb-10">
             <div className="flex items-center gap-3 mb-5">
@@ -414,21 +373,21 @@ export default function FilesPage() {
               <div>
                 <p className="text-slate-400 text-sm mb-1">Used</p>
                 <p className="text-2xl font-black text-white">
-                  {storageInfo?.used ?? "0 GB"}
+                  {storageInfo.used}
                 </p>
               </div>
 
               <div>
                 <p className="text-slate-400 text-sm mb-1">Free</p>
                 <p className="text-2xl font-black text-green-400">
-                  {storageInfo?.free ?? "0 GB"}
+                  {storageInfo.free}
                 </p>
               </div>
 
               <div>
                 <p className="text-slate-400 text-sm mb-1">Total</p>
                 <p className="text-2xl font-black text-slate-300">
-                  {storageInfo?.total ?? "0 GB"}
+                  {storageInfo.total}
                 </p>
               </div>
             </div>
@@ -436,12 +395,14 @@ export default function FilesPage() {
             <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-700"
-                style={{ width: `${Number(storageInfo?.usedPercent ?? 0)}%` }}
+                style={{
+                  width: `${Number(storageInfo.usedPercent ?? 0)}%`,
+                }}
               />
             </div>
 
             <p className="text-slate-500 text-sm mt-2">
-              {storageInfo?.usedPercent ?? 0}% used
+              {storageInfo.usedPercent}% used
             </p>
           </div>
         )}
@@ -457,6 +418,7 @@ export default function FilesPage() {
             className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
             size={22}
           />
+
           <input
             type="text"
             value={search}
@@ -476,9 +438,7 @@ export default function FilesPage() {
           <div className="flex flex-col items-center justify-center py-24 text-slate-500">
             <Folder size={64} className="mb-4 opacity-30" />
             <p className="text-xl font-semibold">No files found</p>
-            <p className="text-sm mt-1">
-              Upload a file or create a folder to get started.
-            </p>
+            <p className="text-sm mt-1">Upload a file to get started.</p>
           </div>
         )}
 
@@ -536,6 +496,7 @@ export default function FilesPage() {
                   >
                     {file.type}
                   </span>
+
                   <p className="text-slate-400 text-lg">{file.size}</p>
                 </div>
 
@@ -555,7 +516,6 @@ export default function FilesPage() {
         </div>
       </div>
 
-      {/* ── Custom Delete Confirmation Popup ── */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-[#071120] border border-white/10 rounded-[28px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(239,68,68,0.15)]">
@@ -563,20 +523,23 @@ export default function FilesPage() {
               <div className="w-14 h-14 rounded-2xl bg-red-500/15 flex items-center justify-center">
                 <AlertTriangle size={28} className="text-red-400" />
               </div>
+
               <div>
                 <h2 className="text-2xl font-black text-white">
                   Delete {deleteTarget.type === "folder" ? "Folder" : "File"}?
                 </h2>
+
                 <p className="text-slate-400 text-sm mt-0.5">
-                  This action cannot be undone.
+                  This will move it to recycle bin.
                 </p>
               </div>
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 mb-6">
-              <p className="text-slate-300 text-sm mb-1 uppercase tracking-widest text-xs font-semibold text-slate-500">
+              <p className="uppercase tracking-widest text-xs font-semibold text-slate-500 mb-1">
                 {deleteTarget.type === "folder" ? "Folder" : "File"}
               </p>
+
               <p className="text-white font-bold text-lg truncate">
                 {deleteTarget.name}
               </p>
@@ -611,64 +574,6 @@ export default function FilesPage() {
         </div>
       )}
 
-      {/* ── New Folder Popup ── */}
-      {showNewFolder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#071120] border border-white/10 rounded-[28px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(34,211,238,0.15)]">
-            <h2 className="text-2xl font-black text-white mb-6">New Folder</h2>
-
-            <input
-              autoFocus
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") createFolder();
-                if (e.key === "Escape") {
-                  setShowNewFolder(false);
-                  setNewFolderName("");
-                  setFolderMsg(null);
-                }
-              }}
-              placeholder="Folder name..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-lg outline-none focus:border-cyan-400 transition-all mb-4"
-            />
-
-            {folderMsg && (
-              <p
-                className={`text-sm mb-4 ${
-                  folderMsg.includes("successfully")
-                    ? "text-green-400"
-                    : "text-red-400"
-                }`}
-              >
-                {folderMsg}
-              </p>
-            )}
-
-            <div className="flex gap-4">
-              <button
-                onClick={createFolder}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 py-4 rounded-2xl font-bold hover:scale-105 transition-all duration-300"
-              >
-                Create
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowNewFolder(false);
-                  setNewFolderName("");
-                  setFolderMsg(null);
-                }}
-                className="flex-1 bg-white/10 py-4 rounded-2xl font-bold hover:bg-white/20 transition-all duration-300"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <style jsx>{`
         .animate-dataMove {
           animation: dataMove 10s linear infinite;
@@ -694,6 +599,7 @@ export default function FilesPage() {
           0% {
             transform: translateX(-20%);
           }
+
           100% {
             transform: translateX(20%);
           }
@@ -703,6 +609,7 @@ export default function FilesPage() {
           0% {
             transform: translateX(20%);
           }
+
           100% {
             transform: translateX(-20%);
           }
@@ -712,9 +619,11 @@ export default function FilesPage() {
           0% {
             transform: translateY(0px) rotate(0deg);
           }
+
           50% {
             transform: translateY(-30px) rotate(8deg);
           }
+
           100% {
             transform: translateY(0px) rotate(0deg);
           }
@@ -725,10 +634,12 @@ export default function FilesPage() {
             transform: scale(0.8);
             opacity: 0.2;
           }
+
           70% {
             transform: scale(1.3);
             opacity: 0;
           }
+
           100% {
             opacity: 0;
           }
@@ -739,10 +650,12 @@ export default function FilesPage() {
             transform: scale(0.7);
             opacity: 0.2;
           }
+
           70% {
             transform: scale(1.5);
             opacity: 0;
           }
+
           100% {
             opacity: 0;
           }
